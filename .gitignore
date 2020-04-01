@@ -1,2 +1,4 @@
 *.ini
 .idea
+outliers
+__pycache__

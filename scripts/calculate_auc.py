@@ -1,5 +1,5 @@
 import pandas
-from performance import getAUC
+from measure import getAUC
 
 
 # 最终计算性能的脚本

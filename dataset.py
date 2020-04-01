@@ -30,10 +30,10 @@ class KaggleDataset(Dataset):
         return len(self.images)
 
     def __getitem__(self, index):
-        print("accessing the image {}".format(self.images[index]))
+        # print("accessing the image {}".format(self.images[index]))
         img_path = os.path.join(self.path_dict["img"], self.images[index])
         label = self.labels.loc[self.labels["image_id"] == self.images[index].split(".")[0]].iloc[:, 1:].to_numpy()
         image = Image.open(img_path).resize(self.model_size)
-        print("the result of {} is {}".format(self.images[index], np.array2string(label[0])))
-        classes = torch.from_numpy(np.array(label[0], dtype=np.uint8))
+        # print("the result of {} is {}".format(self.images[index], np.array2string(label[0])))
+        classes = torch.from_numpy(np.array(label[0], dtype=np.float32))
         return TF.to_tensor(image), classes, self.images[index]
