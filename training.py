@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import torch.utils.tensorboard as tensorboard
 from dataset import KaggleDataset, KaggleLoader
+from datapicker import DataPicker
 from visualize import *
 import numpy as np
 from model import RecognizeModel
@@ -36,6 +37,8 @@ if __name__ == '__main__':
     epoch = int(config["training"]["epoch"])
     gpu = int(config["training"]["device"])
     batch_size = int(config["training"]["batch_size"])
+    k_fold = float(config["training"]["k"])
+
     training_log_dir = output_config["training"]["log"]
     outlier_root = output_config["training"]["outlier_root"]
     iteration = int(config["training"]["iteration"])
@@ -61,7 +64,7 @@ if __name__ == '__main__':
     model = RecognizeModel()
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
     writer = tensorboard.SummaryWriter(training_log_dir)
-    loader_fn = None
+    picker = DataPicker(path_dict["img"], path_dict["label"], k_fold)
     loss_fn = nn.BCEWithLogitsLoss()
     Dataset = KaggleDataset(path_dict)
     DataLoader = None
@@ -70,11 +73,7 @@ if __name__ == '__main__':
     model.to(device)
 
     for iter in range(iteration):
-        train_dataset = Dataset
-        # train_loader = loader_fn()
-        train_loader = KaggleLoader(train_dataset, batch_size)
-        # test_dataset = Dataset()
-        # test_loader = loader_fn()
+        train_loader, test_loader = picker.get_loader(batch_size=10)
         temp_test_vals = []
 
         for e in range(int(epoch)):
@@ -83,13 +82,14 @@ if __name__ == '__main__':
             index = 0
             for idx, data in enumerate(train_loader):
                 optimizer.zero_grad()
+                batch = list(data[0].shape)[0]
                 output = model(data[0].to(device))
                 loss = loss_fn(output, data[1].to(device))
                 print("training batch {}: the loss is {}".format(idx, loss))
                 temp_benchmark = benchmark_fn(output.detach().cpu(), data[1].detach().cpu())
                 # 训练阶段只打印异常输出
                 if is_debug and temp_benchmark < 0.5:
-                    for i in range(batch_size):
+                    for i in range(batch):
                         items = {
                             "{}".format(data[-1][i]): data[0][i]     # data[-1]为读取的文件名
                         }
@@ -127,6 +127,6 @@ if __name__ == '__main__':
             #     test_writer.add_scalar("test/benchmark/{}".format(iter), avg_benchmark, e)
             #     temp_test_vals.append(avg_benchmark)
         # iter_test_vals.append(np.mean(temp_test_vals))
-    print("The final test benchmark is: {}".format(np.mean(iter_test_vals)))
+    # print("The final test benchmark is: {}".format(np.mean(iter_test_vals)))
 
 

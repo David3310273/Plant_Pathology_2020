@@ -14,7 +14,7 @@ class KaggleLoader(DataLoader):
 
 
 class KaggleDataset(Dataset):
-    def __init__(self, path_dict, need_aug=True):
+    def __init__(self, path_dict, paths=None, need_aug=True):
         super().__init__()
 
         self.model_size = (224, 224)
@@ -24,16 +24,14 @@ class KaggleDataset(Dataset):
         assert "label" in self.path_dict
 
         self.labels = pandas.read_csv(self.path_dict["label"])
-        self.images = [val for val in os.listdir(self.path_dict["img"])]
+        self.images = paths
 
     def __len__(self):
         return len(self.images)
 
     def __getitem__(self, index):
-        # print("accessing the image {}".format(self.images[index]))
         img_path = os.path.join(self.path_dict["img"], self.images[index])
         label = self.labels.loc[self.labels["image_id"] == self.images[index].split(".")[0]].iloc[:, 1:].to_numpy()
         image = Image.open(img_path).resize(self.model_size)
-        # print("the result of {} is {}".format(self.images[index], np.array2string(label[0])))
         classes = torch.from_numpy(np.array(label[0], dtype=np.float32))
         return TF.to_tensor(image), classes, self.images[index]

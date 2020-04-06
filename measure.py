@@ -29,4 +29,4 @@ def benchmark_fn(output, ground_truth):
     for i in range(size[1]):
         temp = getAUC(transpose_output[i], transposed_gt[i])
         benchmark += temp
-    return benchmark/size[0]
+    return benchmark/size[1]
