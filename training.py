@@ -5,6 +5,7 @@ import torch.utils.tensorboard as tensorboard
 from dataset import KaggleDataset, KaggleLoader
 from datapicker import DataPicker
 from visualize import *
+from scripts.calculate_auc import calculate
 import numpy as np
 from model import RecognizeModel
 import os
@@ -35,7 +36,7 @@ if __name__ == '__main__':
 
     # training配置项
     epoch = int(config["training"]["epoch"])
-    gpu = int(config["training"]["device"])
+    gpu = config["training"]["device"]
     batch_size = int(config["training"]["batch_size"])
     k_fold = float(config["training"]["k"])
 
@@ -96,6 +97,7 @@ if __name__ == '__main__':
                         write_image(items, outlier_root)
                 print("training batch {}: the benckmark is {}".format(idx, temp_benchmark))
                 writer.add_scalar("train/loss/{}/{}".format(iter, e), loss, idx)
+                writer.add_scalar("train/benchmark/{}/{}".format(iter, e), temp_benchmark, idx)
                 loss.backward()
                 optimizer.step()
                 epoch_benchmark += temp_benchmark
@@ -103,30 +105,39 @@ if __name__ == '__main__':
             avg_benchmark = epoch_benchmark/index
             writer.add_scalar("train/avg_auc/{}".format(iter), avg_benchmark, e)
 
-            # with torch.no_grad():
-            #     index = 0
-            #     epoch_benchmark = 0
-            #     model.eval()
-            #     test_writer = tensorboard.SummaryWriter(test_log_dir)
-            #     for idx, data in enumerate(test_loader):
-            #         output = model(data[0].to(device))
-            #         loss = loss_fn(output, data[1].to(device))
-            #         temp_benchmark = benchmark_fn()
-            #         test_writer.add_scalar("test/loss/{}/{}".format(iter, e), loss, idx)
-            #         epoch_benchmark += temp_benchmark
-            #         index += 1
-            #         # 如有必有，可视化test结果
-            #         if is_visualize:
-            #             items = {
-            #                 "img_{}".format(data[-1]): data[0],  # data[-1]为读取的文件名
-            #                 "output_{}".format(data[-1]): output,
-            #                 "gt_{}".format(data[-1]): data[1],
-            #             }
-            #             write_image(items, outlier_root)
-            #     avg_benchmark = epoch_benchmark / index
-            #     test_writer.add_scalar("test/benchmark/{}".format(iter), avg_benchmark, e)
-            #     temp_test_vals.append(avg_benchmark)
-        # iter_test_vals.append(np.mean(temp_test_vals))
-    # print("The final test benchmark is: {}".format(np.mean(iter_test_vals)))
+            # 测试代码
+            with torch.no_grad():
+                index = 0
+                epoch_benchmark = 0
+                model.eval()
+                test_writer = tensorboard.SummaryWriter(test_log_dir)
+                items = {}
+                gts = {}
+                for idx, data in enumerate(test_loader):
+                    output = model(data[0].to(device))
+                    batch = list(data[0].shape)[0]
+                    loss = loss_fn(output, data[1].to(device))
+                    temp_benchmark = benchmark_fn(output.detach().cpu(), data[1].detach().cpu())
+                    print("test batch {}: the loss is {}".format(idx, loss))
+                    print("test batch {}: the benchmark is {}".format(idx, temp_benchmark))
+                    test_writer.add_scalar("test/loss/{}/{}".format(iter, e), loss, idx)
+                    test_writer.add_scalar("test/benchmark/{}/{}".format(iter, e), temp_benchmark, idx)
+                    epoch_benchmark += temp_benchmark
+                    index += 1
+                    for i in range(batch):
+                        items = {
+                            "{}".format(data[-1][i]): output[i],  # data[-1]为读取的文件名
+                        }
+                        gts = {
+                            "{}".format(data[-1][i]): data[1][i],
+                        }
+                # 按照规定标准计算测试性能
+                write_csv(items, outlier_root, "test_result_{}.csv".format(epoch))
+                write_csv(gts, outlier_root, "ground_truths_{}.csv".format(epoch))
+                test_avg_benchmark = calculate(os.path.join(outlier_root, "test_result_{}.csv".format(epoch)), os.path.join(outlier_root, "ground_truths_{}.csv".format(epoch)))
+                test_writer.add_scalar("test/avg_benchmark/{}".format(iter), test_avg_benchmark, e)
+                temp_test_vals.append(test_avg_benchmark)
+        iter_test_vals.append(np.mean(temp_test_vals))
+    print("The final test benchmark is: {}".format(np.mean(iter_test_vals)))
 
 

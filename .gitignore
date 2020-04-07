@@ -2,3 +2,4 @@
 .idea
 outliers
 __pycache__
+train_log
