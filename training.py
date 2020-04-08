@@ -42,6 +42,7 @@ if __name__ == '__main__':
 
     training_log_dir = output_config["training"]["log"]
     outlier_root = output_config["training"]["outlier_root"]
+    csv_output = output_config["testing"]["csv_output"]
     iteration = int(config["training"]["iteration"])
 
     path_dict = {
@@ -60,6 +61,9 @@ if __name__ == '__main__':
     if torch.cuda.is_available():
         os.environ['CUDA_VISIBLE_DEVICES'] = gpu
         device = torch.device("cuda", int(gpu))
+
+    if not os.path.exists(csv_output):
+        os.mkdir(csv_output)
 
     # TODO: 替换为真正的变量后使用
     model = RecognizeModel()
@@ -113,6 +117,7 @@ if __name__ == '__main__':
                 test_writer = tensorboard.SummaryWriter(test_log_dir)
                 items = {}
                 gts = {}
+                f = nn.Softmax(dim=1)
                 for idx, data in enumerate(test_loader):
                     output = model(data[0].to(device))
                     batch = list(data[0].shape)[0]
@@ -124,17 +129,14 @@ if __name__ == '__main__':
                     test_writer.add_scalar("test/benchmark/{}/{}".format(iter, e), temp_benchmark, idx)
                     epoch_benchmark += temp_benchmark
                     index += 1
+                    visual_output = f(output)
                     for i in range(batch):
-                        items = {
-                            "{}".format(data[-1][i]): output[i],  # data[-1]为读取的文件名
-                        }
-                        gts = {
-                            "{}".format(data[-1][i]): data[1][i],
-                        }
+                        items["{}".format(data[-1][i].split(".")[0])] = visual_output[i]  # data[-1]为读取的文件名
+                        gts["{}".format(data[-1][i].split(".")[0])] = data[1][i]
                 # 按照规定标准计算测试性能
-                write_csv(items, outlier_root, "test_result_{}.csv".format(epoch))
-                write_csv(gts, outlier_root, "ground_truths_{}.csv".format(epoch))
-                test_avg_benchmark = calculate(os.path.join(outlier_root, "test_result_{}.csv".format(epoch)), os.path.join(outlier_root, "ground_truths_{}.csv".format(epoch)))
+                write_csv(items, os.path.join(csv_output, str(iter)), "test_result_{}.csv".format(e))
+                write_csv(gts, os.path.join(csv_output, str(iter)), "ground_truths_{}.csv".format(e))
+                test_avg_benchmark = calculate(os.path.join(os.path.join(csv_output, str(iter)), "test_result_{}.csv".format(e)), os.path.join(os.path.join(csv_output, str(iter)), "ground_truths_{}.csv".format(e)))
                 test_writer.add_scalar("test/avg_benchmark/{}".format(iter), test_avg_benchmark, e)
                 temp_test_vals.append(test_avg_benchmark)
         iter_test_vals.append(np.mean(temp_test_vals))
