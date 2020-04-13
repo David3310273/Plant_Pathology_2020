@@ -99,7 +99,7 @@ if __name__ == '__main__':
                             "{}".format(data[-1][i]): data[0][i]     # data[-1]为读取的文件名
                         }
                         write_image(items, outlier_root)
-                print("training batch {}: the benckmark is {}".format(idx, temp_benchmark))
+                print("training batch {}: the benchmark is {}".format(idx, temp_benchmark))
                 writer.add_scalar("train/loss/{}/{}".format(iter, e), loss, idx)
                 writer.add_scalar("train/benchmark/{}/{}".format(iter, e), temp_benchmark, idx)
                 loss.backward()
