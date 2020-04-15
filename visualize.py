@@ -20,7 +20,8 @@ def write_csv(items, root, filename="test_result.csv"):
         header_writer = csv.DictWriter(f, fieldnames=["image_id", ""])
         header_writer.writeheader()
         writer = csv.writer(f)
-        for key in items:
+        keys = sorted(items.keys(), key=lambda x: int(x.split("_")[1]))
+        for key in keys:
             row = [key] + items[key].detach().cpu().numpy().tolist()
             writer.writerow(row)
     f.close()

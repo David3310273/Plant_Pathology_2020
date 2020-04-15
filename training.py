@@ -45,6 +45,9 @@ if __name__ == '__main__':
     csv_output = output_config["testing"]["csv_output"]
     iteration = int(config["training"]["iteration"])
 
+    if not os.path.exists(outlier_root):
+        os.mkdir(outlier_root)
+
     path_dict = {
         "img": output_config["training"]["img_root"],
         "label": output_config["training"]["label_root"],
@@ -52,6 +55,7 @@ if __name__ == '__main__':
 
     # app配置项
     is_debug = config.getboolean("app", "debug")
+    model_output = output_config.get("app", "model_output")
 
     # testing配置项
     test_log_dir = output_config["testing"]["log"]
@@ -77,11 +81,22 @@ if __name__ == '__main__':
 
     model.to(device)
 
+    if not os.path.exists(model_output):
+        os.mkdir(model_output)
+
     for iter in range(iteration):
         train_loader, test_loader = picker.get_loader(batch_size=10)
         temp_test_vals = []
+        start = 0
 
-        for e in range(int(epoch)):
+        if os.path.exists(os.path.join(model_output, str(iter))):
+            path = os.path.join(model_output, str(iter))
+            checkpoint = torch.load(path)
+            model.load_state_dict(checkpoint['model_state_dict'])
+            optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+            start = checkpoint['epoch']
+
+        for e in range(start, int(epoch)):
             model.train()
             epoch_benchmark = 0
             index = 0
@@ -98,7 +113,7 @@ if __name__ == '__main__':
                         items = {
                             "{}".format(data[-1][i]): data[0][i]     # data[-1]为读取的文件名
                         }
-                        write_image(items, outlier_root)
+                        write_image(items, os.path.join(outlier_root, str(iter)))
                 print("training batch {}: the benchmark is {}".format(idx, temp_benchmark))
                 writer.add_scalar("train/loss/{}/{}".format(iter, e), loss, idx)
                 writer.add_scalar("train/benchmark/{}/{}".format(iter, e), temp_benchmark, idx)
@@ -139,6 +154,11 @@ if __name__ == '__main__':
                 test_avg_benchmark = calculate(os.path.join(os.path.join(csv_output, str(iter)), "test_result_{}.csv".format(e)), os.path.join(os.path.join(csv_output, str(iter)), "ground_truths_{}.csv".format(e)))
                 test_writer.add_scalar("test/avg_benchmark/{}".format(iter), test_avg_benchmark, e)
                 temp_test_vals.append(test_avg_benchmark)
+            torch.save({
+                "epoch": e,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+            }, os.path.join(model_output, str(iter)))
         iter_test_vals.append(np.mean(temp_test_vals))
     print("The final test benchmark is: {}".format(np.mean(iter_test_vals)))
 

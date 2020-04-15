@@ -35,3 +35,22 @@ class KaggleDataset(Dataset):
         image = Image.open(img_path).resize(self.model_size)
         classes = torch.from_numpy(np.array(label[0], dtype=np.float32))
         return TF.to_tensor(image), classes, self.images[index]
+
+# 加载验证集
+class ValidationDataset(Dataset):
+    def __init__(self, path_dict, need_aug=True):
+        super().__init__()
+
+        self.model_size = (224, 224)
+        self.path_dict = path_dict
+
+        assert "img" in self.path_dict
+        self.images = sorted(os.listdir(self.path_dict["img"]))
+
+    def __len__(self):
+        return len(self.images)
+
+    def __getitem__(self, index):
+        img_path = os.path.join(self.path_dict["img"], self.images[index])
+        image = Image.open(img_path).resize(self.model_size)
+        return TF.to_tensor(image), self.images[index]
