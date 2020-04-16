@@ -63,6 +63,7 @@ if __name__ == '__main__':
 
     device = torch.device("cpu:0")
     if torch.cuda.is_available():
+        os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
         os.environ['CUDA_VISIBLE_DEVICES'] = gpu
         device = torch.device("cuda", int(gpu))
 
