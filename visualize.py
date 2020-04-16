@@ -17,7 +17,7 @@ def write_csv(items, root, filename="test_result.csv"):
     if not os.path.exists(root):
         os.mkdir(root)
     with open(path, "w", newline="") as f:
-        header_writer = csv.DictWriter(f, fieldnames=["image_id", ""])
+        header_writer = csv.DictWriter(f, fieldnames=["image_id", "healthy", "multiple_diseases", "rust", "scab"])
         header_writer.writeheader()
         writer = csv.writer(f)
         keys = sorted(items.keys(), key=lambda x: int(x.split("_")[1]))
