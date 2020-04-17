@@ -11,6 +11,23 @@ def getAUC(score, ground_truth):
         pass
     return result
 
+def getAccuracy(output, ground_truth):
+    """
+    计算准确率性能
+    :param output:
+    :param ground_truth:
+    :return:
+    """
+    f = nn.Softmax(dim=1)
+    output = f(output)
+    output_map = torch.argmax(output, dim=1)
+    ground_truth_map = torch.argmax(ground_truth, dim=1)
+    ones = torch.ones_like(output_map, dtype=torch.float32)
+    zeros = torch.zeros_like(ground_truth_map, dtype=torch.float32)
+    result = torch.where(output_map-ground_truth_map == 0, ones, zeros)
+    return torch.mean(result).item()
+
+
 
 def benchmark_fn(output, ground_truth):
     """
