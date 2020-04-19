@@ -39,6 +39,7 @@ if __name__ == '__main__':
     gpu = config["training"]["device"]
     batch_size = int(config["training"]["batch_size"])
     k_fold = float(config["training"]["k"])
+    pos_weights = torch.FloatTensor([91/516, 1, 91/622, 91/622])
 
     training_log_dir = output_config["training"]["log"]
     outlier_root = output_config["training"]["outlier_root"]
@@ -66,6 +67,7 @@ if __name__ == '__main__':
         os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
         os.environ['CUDA_VISIBLE_DEVICES'] = gpu
         device = torch.device("cuda", int(gpu))
+        pos_weights = pos_weights.to(device)
 
     if not os.path.exists(csv_output):
         os.mkdir(csv_output)
@@ -75,7 +77,7 @@ if __name__ == '__main__':
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
     writer = tensorboard.SummaryWriter(training_log_dir)
     picker = DataPicker(path_dict["img"], path_dict["label"], k_fold)
-    loss_fn = nn.BCEWithLogitsLoss()
+    loss_fn = nn.BCEWithLogitsLoss(pos_weight=pos_weights)
     Dataset = KaggleDataset(path_dict)
     DataLoader = None
     iter_test_vals = []
@@ -142,7 +144,7 @@ if __name__ == '__main__':
                 test_writer = tensorboard.SummaryWriter(test_log_dir)
                 items = {}
                 gts = {}
-                f = nn.Softmax(dim=1)
+                f = nn.Sigmoid()
                 for idx, data in enumerate(test_loader):
                     output = model(data[0].to(device))
                     batch = list(data[0].shape)[0]

@@ -18,7 +18,7 @@ def getAccuracy(output, ground_truth):
     :param ground_truth:
     :return:
     """
-    f = nn.Softmax(dim=1)
+    f = nn.Sigmoid()
     output = f(output)
     output_map = torch.argmax(output, dim=1)
     ground_truth_map = torch.argmax(ground_truth, dim=1)
@@ -36,7 +36,7 @@ def benchmark_fn(output, ground_truth):
     :param ground_truth:
     :return:
     """
-    f = nn.Softmax(dim=1)
+    f = nn.Sigmoid()
     output = f(output)
     assert output.shape == ground_truth.shape
     size = list(output.size())
