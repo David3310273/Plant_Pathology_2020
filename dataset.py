@@ -31,6 +31,13 @@ class KaggleDataset(Dataset):
     def __len__(self):
         return len(self.images)
 
+    def preprocessing(self, image):
+        composer = transforms.Compose([
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        ])
+        pic = composer(image)
+        return pic
+
     def aug_transform(self, image):
         composer = transforms.Compose([
             transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.01, hue=0.01),
@@ -46,7 +53,8 @@ class KaggleDataset(Dataset):
         if self.need_aug:
             image = self.aug_transform(image)
         classes = torch.from_numpy(np.array(label[0], dtype=np.float32))
-        return TF.to_tensor(image), classes, self.images[index]
+        img = self.preprocessing(TF.to_tensor(image))
+        return img, classes, self.images[index]
 
 
 # 加载验证集
@@ -72,9 +80,15 @@ class ValidationDataset(Dataset):
         pic = composer(image)
         return pic
 
+    def preprocessing(self, image):
+        normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        pic = normalize(image)
+        return pic
+
     def __getitem__(self, index):
         img_path = os.path.join(self.path_dict["img"], self.images[index])
         image = Image.open(img_path).resize(self.model_size)
         if self.need_aug:
             image = self.aug_transform(image)
-        return TF.to_tensor(image), self.images[index]
+        img = self.preprocessing(TF.to_tensor(image))
+        return img, self.images[index]
