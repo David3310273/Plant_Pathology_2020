@@ -53,7 +53,8 @@ class KaggleDataset(Dataset):
         if self.need_aug:
             image = self.aug_transform(image)
         classes = torch.from_numpy(np.array(label[0], dtype=np.float32))
-        img = self.preprocessing(TF.to_tensor(image))
+        # img = self.preprocessing(TF.to_tensor(image))
+        img = TF.to_tensor(image)
         return img, classes, self.images[index]
 
 
@@ -90,5 +91,6 @@ class ValidationDataset(Dataset):
         image = Image.open(img_path).resize(self.model_size)
         if self.need_aug:
             image = self.aug_transform(image)
-        img = self.preprocessing(TF.to_tensor(image))
+        # img = self.preprocessing(TF.to_tensor(image))
+        img = TF.to_tensor(image)
         return img, self.images[index]

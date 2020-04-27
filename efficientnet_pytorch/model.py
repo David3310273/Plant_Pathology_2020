@@ -227,9 +227,3 @@ class EfficientNet(nn.Module):
         valid_models = ['efficientnet-b'+str(i) for i in range(9)]
         if model_name not in valid_models:
             raise ValueError('model_name should be one of: ' + ', '.join(valid_models))
-
-if __name__ == '__main__':
-    model = EfficientNet.from_pretrained('efficientnet-b7')
-    x = torch.ones((10, 3, 224, 224))
-    result = model(x)
-    print(result.shape)
