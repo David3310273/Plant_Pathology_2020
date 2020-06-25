@@ -129,6 +129,7 @@ if __name__ == '__main__':
                 loss.backward()
                 optimizer.step()
                 epoch_benchmark += temp_benchmark
+                epoch_accuracy += temp_accuracy
                 index += 1
             avg_benchmark = epoch_benchmark/index
             avg_accuracy = epoch_accuracy/index
