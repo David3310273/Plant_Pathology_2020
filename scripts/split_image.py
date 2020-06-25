@@ -14,6 +14,3 @@ def split_images(root):
             shutil.move(os.path.join(img_path, image), test_target)
             print("Moving {} to {}".format(image, test_target))
 
-if __name__ == '__main__':
-    split_images("/Users/david/Desktop/plant-pathology-2020-fgvc7")
-
